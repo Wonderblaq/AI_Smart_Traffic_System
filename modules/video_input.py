@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+from ultralytics import YOLO
 
 # Open video path
 traffic_vid = cv2.VideoCapture("../ASSETS/Final_year_datavideo.mp4")
@@ -15,7 +16,7 @@ else:
     exit()
 
 cv2.namedWindow("frame")  # create window once
-
+model =YOLO("yolov8n.pt")
 while True:
     ret, frame = traffic_vid.read()   # read frame inside loop
     if not ret:
@@ -23,7 +24,9 @@ while True:
 
     temp = frame.copy()
     resized_frame = cv2.resize(temp, (640, 480))  # resize for display
-    cv2.imshow("frame", resized_frame)
+    resized_frame = model.predict(resized_frame)
+    resized_frame = resized_frame[0]
+    cv2.imshow("frame", resized_frame.plot())
 
     # quit on 'q'
     if cv2.waitKey(1) & 0xFF == ord('q'):

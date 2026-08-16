@@ -1,49 +1,103 @@
 import cv2
-import numpy as np
-from roi import draw_roi_from_points
-
 from modules.models import VehicleDetector
+from roi import draw_roi_from_points
+from modules.analytics import LaneAnalyzer
+from modules.TrafficDataLogger import TrafficDataLogger
 
 
-# (Also import your video_input or roi functions if they are set up)
 
-# 1. Initialize your detector class
+
+# Initialize your detector class
 detector = VehicleDetector()
-# 2. Hardcode your saved coordinates array from our polygon session
-# (Use the 4 lane polygons you drew earlier)
+
+# Your hardcoded polygon coordinates
 MY_LANES = [
-    [(158, 292), (374, 206), (14, 10), (8, 104), (92, 182)], # Lane 1
-    [(4, 384), (6, 470), (84, 472), (432, 238), (336, 176)], # Lane 2
-    [(232, 382), (388, 478), (628, 470), (632, 372), (416, 226)], # Lane 3
-    [(304, 200), (402, 262), (636, 76), (632, 26), (486, 90)], # Lane 4
+    [(6, 98), (154, 274), (428, 224), (116, 56), (16, 2)],       # Lane 1
+    [(10, 378), (298, 170), (448, 202), (244, 388), (72, 476)],   # Lane 2
+    [(628, 22), (250, 198), (350, 300), (542, 146), (636, 66)],   # Lane 3
+    [(204, 380), (386, 472), (632, 474), (630, 366), (420, 208)], # Lane 4
 ]
 
-# 3. Start your video stream loop (use your video_input module or standard cv2.VideoCapture)
+# INITIALIZE ANALYTICS ENGINE BEFORE THE LOOP
+# We pass MY_LANES so it creates sets and polygon arrays for all 4 lanes
+analytics = LaneAnalyzer(MY_LANES)
+
+# Record every 5 seconds of video time (at 30 FPS = 150 frames per row)
+logger = TrafficDataLogger(num_lanes=len(MY_LANES), csv_filename="traffic_data.csv", window_seconds=5, fps=30)
+
+# Start your video stream loop
 cap = cv2.VideoCapture("../ASSETS/Final_year_datavideo.mp4")
 
 while True:
     ret, frame = cap.read()
     if not ret:
         break
-    frame = cv2.resize(frame, (640, 480))
 
-    # --- WRITE YOUR INTEGRATION CODE HERE ---
+    # Build the mask and extract the ROI frame using your custom function
+    roi_frame, masked, annotated = draw_roi_from_points(frame, MY_LANES)
 
-    # A. Build the master mask using your MY_LANES coordinates
-    mask = np.zeros(frame.shape[:2], dtype="uint8")
-    # (Create empty black mask, loop through MY_LANES, fill them with white)
-    new_frame,masked, annotated = draw_roi_from_points(frame, MY_LANES)
-    # B. Extract the ROI frame using cv2.bitwise_and
+    # Pass the ROI frame into your detector object to get raw numeric data
+    current_detections = detector.track(roi_frame)
 
-    # C. Pass the ROI frame into your detector object to get raw numeric data
-    # Hint: current_detections = detector.detect(...)
+    # PASS DETECTIONS TO ANALYTICS ENGINE FOR THIS FRAME
+    # Returns two dicts:
+    # live_density = {0: count, 1: count, 2: count, 3: count}
+    # total_counts = {0: total, 1: total, 2: total, 3: total}
+    live_density, total_counts = analytics.process_frame(current_detections)
 
-    # D. Print your raw detections list to the console live as the video plays!
 
-    # ----------------------------------------
+    # Log frame stats to aggregator
+    logger.log_frame(live_density, total_counts)
 
-    # Optional: Display the ROI frame to watch the video stream
-    cv2.imshow("Live AI Traffic Stream", annotated)
+    # Print analytics live to console to verify during testing
+    print(f"Live Density per lane: {live_density} | Cumulative Total: {total_counts}")
+
+    # Loop through each vehicle found in current_detections
+    for det in current_detections:
+        # Unpack the raw data
+        x1, y1, x2, y2, track_id, conf, cls = det
+
+        # Draw bounding box
+        cv2.rectangle(roi_frame, (x1, y1), (x2, y2), (0, 255, 0), 1)
+
+        # Draw tire contact point (bottom-center) so you can visually verify
+        # which point is being checked against the lane polygons!
+        cx = int((x1 + x2) / 2)
+        cy = int(y2)
+        cv2.circle(roi_frame, (cx, cy), 4, (0, 0, 255), -1)  # Red dot at tire contact point
+
+        # Add text label showing track_id
+        label = f"ID #{track_id} ({conf:.2f})"
+        cv2.putText(
+            roi_frame,
+            label,
+            (x1, y1 - 8),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 0),
+            1,
+            cv2.LINE_AA,
+        )
+
+
+    # Display the lane stats at the top of the video feed
+    y_offset = 30
+    for lane_idx in range(len(MY_LANES)):
+        info_text = f"Lane {lane_idx + 1} -> Active: {live_density[lane_idx]} | Total: {total_counts[lane_idx]}"
+        cv2.putText(
+            roi_frame,
+            info_text,
+            (10, y_offset),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 0), # Cyan text
+
+        )
+        y_offset += 25  # Move next lane text down by 25 pixels
+
+    # Display window
+    cv2.imshow("Live AI Traffic Stream", roi_frame)
+
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
