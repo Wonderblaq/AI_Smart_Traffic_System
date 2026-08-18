@@ -4,6 +4,7 @@ import os
 from ultralytics import YOLO
 
 # Open video path
+# Current video file is only a testing video, A drone footage of a road intersection would be used once available
 traffic_vid = cv2.VideoCapture("../ASSETS/Final_year_datavideo.mp4")
 
 # Check if video opened
