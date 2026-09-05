@@ -1,68 +1,39 @@
-# AI-Powered Traffic Congestion Prediction & Route Optimization System
+                    **AI-Powered Traffic Congestion Prediction & Route Optimization System**
 
-An end-to-end intelligent transportation system that combines real-time computer vision,
-lane-level spatial analytics, and time-series forecasting. 
-The pipeline detects and tracks vehicles from live/recorded video, aggregates lane-specific density and flow metrics, and logs structured temporal data for deep learning-based congestion prediction and signal optimization.
+An end-to-end intelligent traffic monitoring platform designed for the Sunyani COCOBOD intersection. The system processes camera feeds, monitors lane-specific vehicle counts, logs time-series data, and uses an LSTM model to forecast traffic bottlenecks—all displayed on an interactive Streamlit web dashboard.
 
----
+**SYSTEM WORKFLOW**
 
-## Architecture Overview
-```
-+---------------------------+
-                            |     Input Video Stream    |
-                            +-------------+-------------+
-                                          |
-                                          v
-                            +---------------------------+
-                            |  Region of Interest (ROI) |
-                            |      Poly-Masking         |
-                            +-------------+-------------+
-                                          |
-                                          v
-                            +---------------------------+
-                            |   YOLOv8 + ByteTrack      |
-                            |  Detection & ID Tracking  |
-                            +-------------+-------------+
-                                          |
-                                          v
-                            +---------------------------+
-                            |      LaneAnalytics        |
-                            | (Point-in-Poly / Sets)    |
-                            +-------------+-------------+
-                                          |
-                                          v
-                            +---------------------------+
-                            |    TrafficDataLogger      |
-                            | (CSV Time-Series Export)  |
-                            +-------------+-------------+
-                                          |
-                                          v
-                            +---------------------------+
-                            |    LSTM Neural Network    |
-                            |  (Congestion Prediction)  |
-                            +---------------------------+
-```
+                [ Video / Camera Feed ]
+                          │
+                          ▼
+            [ Spatial ROI Masking (Polygons) ]
+                          │
+                          ▼
+             [ YOLOv8 + ByteTrack Detection ]
+                          │
+                          ▼
+             [ Lane Analytics & Deduplication ]
+                          │
+                          ▼
+               [ Traffic Data Logger ]
+                          │
+           ┌──────────────┴──────────────┐
+           ▼                             ▼
+    [ LSTM Model Predictions ]    [ Streamlit + Folium UI ]
 
-## Key Features
 
-* **Multi-Lane Spatial Analytics:** Uses custom polygon ROIs to monitor individual lanes.
-* **Tire-Ground Point Tracking:** Computes bottom-center coordinates $(c_x, y_2)$ to accurately assign cars to lanes.
-* **Deduplicated Flow Counting:** Uses Python sets to log unique vehicle IDs per lane without double-counting.
-* **Time-Series Aggregation:** Aggregates 30 FPS video telemetry into average density ($\bar{D}$) and traffic volume ($V$) metrics.
-* **LSTM-Ready Data Output:** Automatically exports structured CSV logs for neural network training.
 
----
+**What It Does**
 
-## Project Structure
+Lane-by-Lane Monitoring: Maps four distinct approach roads (Kumasi Rd, CBD/Township, Berekum Rd, and Atronie Rd) using custom polygon coordinates.
 
-```text
-AI_smart_traffic_system/
-├── ASSETS/                         # Video files
-├── modules/
-│   ├── models.py                   # YOLO + ByteTrack engine
-│   ├── analytics.py                # LaneAnalytics spatial engine
-│   ├── data_logger.py              # Time-series CSV logger
-│   └── main.py                     # Execution pipeline
-├── roi.py                          # ROI polygon utilities
-├── traffic_data.csv                # Generated dataset
-└── requirements.txt                # Dependencies
+Accurate Tracking: Tracks vehicle base coordinates rather than bounding box centers to prevent overlap errors when cars cross lane borders.
+
+Unique Flow Counts: Tracks vehicle IDs to count each car once per lane interval.
+
+Time-Series Logging: Converts high-framerate video data into aggregated interval logs for deep learning.
+
+LSTM Forecasting: Processes historical sequence logs to predict incoming traffic spikes across all approaches.
+
+Interactive Dashboard: Embeds an annotated video stream and an interactive Folium map that dynamically displays approach traffic states using colored markers and directional vectors.
