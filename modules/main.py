@@ -11,22 +11,29 @@ from modules.TrafficDataLogger import TrafficDataLogger
 detector = VehicleDetector()
 
 # Your hardcoded polygon coordinates
-MY_LANES = [
+MY_LANES_1 = [
     [(6, 98), (154, 274), (428, 224), (116, 56), (16, 2)],       # Lane 1
     [(10, 378), (298, 170), (448, 202), (244, 388), (72, 476)],   # Lane 2
     [(628, 22), (250, 198), (350, 300), (542, 146), (636, 66)],   # Lane 3
     [(204, 380), (386, 472), (632, 474), (630, 366), (420, 208)], # Lane 4
 ]
+MY_LANES = [
+    [(10, 386), (262, 303), (272, 217), (138, 201), (0, 250)], # Lane 1
+    [(198, 290), (290, 191), (426, 188), (540, 277), (458, 453)], # Lane 2
+    [(294, 160), (242, 216), (430, 210), (622, 106), (530, 98)], # Lane 3
+    [(202, 230), (390, 172), (88, 22), (74, 36), (148, 186)], # Lane 4
+]
+
 
 # INITIALIZE ANALYTICS ENGINE BEFORE THE LOOP
 # We pass MY_LANES so it creates sets and polygon arrays for all 4 lanes
 analytics = LaneAnalyzer(MY_LANES)
 
 # Record every 5 seconds of video time (at 30 FPS = 150 frames per row)
-logger = TrafficDataLogger(num_lanes=len(MY_LANES), csv_filename="traffic_data.csv", window_seconds=5, fps=30)
+logger = TrafficDataLogger(num_lanes=len(MY_LANES), csv_filename="../ASSETS/traffic_data.csv", window_seconds=5, fps=30)
 
 # Start your video stream loop
-cap = cv2.VideoCapture("../ASSETS/Final_year_datavideo.mp4")
+cap = cv2.VideoCapture(r"C:\Users\User\Videos\Screen Recordings\top-view2.mp4")
 
 while True:
     ret, frame = cap.read()
@@ -80,20 +87,20 @@ while True:
         )
 
 
-    # Display the lane stats at the top of the video feed
-    y_offset = 30
+    # Display the lane stats at the bottom of the video feed
+    y_offset = 400
     for lane_idx in range(len(MY_LANES)):
         info_text = f"Lane {lane_idx + 1} -> Active: {live_density[lane_idx]} | Total: {total_counts[lane_idx]}"
         cv2.putText(
             roi_frame,
             info_text,
-            (10, y_offset),
+            (8, y_offset),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
+            0.5,
             (255, 255, 0), # Cyan text
 
         )
-        y_offset += 25  # Move next lane text down by 25 pixels
+        y_offset += 20  # Move next lane text down by 25 pixels
 
     # Display window
     cv2.imshow("Live AI Traffic Stream", roi_frame)

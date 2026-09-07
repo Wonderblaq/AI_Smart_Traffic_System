@@ -1,0 +1,24 @@
+# Virtual Environments
+venv/
+tf_env/
+torch_env/
+.venv/
+ENV/
+env/
+
+# Python Cache & Builds
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# IDE / Editor Files
+.idea/
+.vscode/
+
+# Large Model / Dataset Files (Use Git LFS for these instead)
+*.mp4
+*.keras
+*.pkl
+*.pt
