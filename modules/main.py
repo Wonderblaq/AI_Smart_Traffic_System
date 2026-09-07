@@ -1,10 +1,22 @@
 import cv2
+
 from modules.models import VehicleDetector
 from roi import draw_roi_from_points
 from modules.analytics import LaneAnalyzer
 from modules.TrafficDataLogger import TrafficDataLogger
 
 
+import sys
+import numpy as np
+import torch
+
+print("================================")
+print("PYTHON:", sys.executable)
+print("NUMPY:", np.__version__)
+print("NUMPY PATH:", np.__file__)
+print("TORCH:", torch.__version__)
+print("TORCH-NUMPY:", torch.from_numpy(np.array([1, 2, 3])))
+print("================================")
 
 
 # Initialize your detector class
